@@ -18,6 +18,14 @@ class SinkMobitech extends SinkBase
     /**
      * @inheritdoc
      */
+    public function destinationTables(): array
+    {
+        return [];
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function getFromDate(): Carbon
     {
         return new Carbon('2023-12-11');
@@ -50,8 +58,16 @@ class SinkMobitech extends SinkBase
     /**
      * @inheritdoc
      */
-    public function deleteImport(string $chunkId): bool
+    public function deleteImport(string $id, SinkFile $file): bool
     {
         return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function filenameToChunkId(string $filename): string|null
+    {
+        return null;
     }
 }
