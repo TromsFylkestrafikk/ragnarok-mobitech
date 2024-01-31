@@ -1,0 +1,17 @@
+composer.lock
+/vendor/
+/node_modules
+/package-lock.json
+
+# Code indexing and editor tools
+/.ac-php-conf.json
+/.tern-port
+/.php_cs.cache
+/.phpactor.json
+/.eslintcache
+/_ide_helper*
+
+# Auto-generated files
+.DS_Store
+.log/
+npm-debug.log
