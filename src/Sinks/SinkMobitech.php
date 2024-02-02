@@ -44,7 +44,11 @@ class SinkMobitech extends SinkBase
      */
     public function fetch(string $id): SinkFile|null
     {
-        return null;
+        $archive = new ChunkArchive(static::$id, $id);
+        foreach (MobitechFiles::getData($id) as $filename => $content) {
+            $archive->addFromString($filename, $content);
+        }
+        return $archive->save()->getFile();
     }
 
     /**
@@ -68,6 +72,8 @@ class SinkMobitech extends SinkBase
      */
     public function filenameToChunkId(string $filename): string|null
     {
-        return null;
+        $matches = [];
+        $hits = preg_match('|(?P<date>\d{4}-\d{2}-\d{2})\.zip$|', $filename, $matches);
+        return $hits ? $matches['date'] : null;
     }
 }
