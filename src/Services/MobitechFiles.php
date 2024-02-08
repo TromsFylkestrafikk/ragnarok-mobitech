@@ -17,8 +17,10 @@ class MobitechFiles
 
     /**
      * Fetching data from Mobitech's via their Data Lake Gen 2 API.
-     * 
-     * @param string $id Date on format YYYY-MM-DD
+     *
+     * @param string $id Chunk ID. Date on format YYYY-MM-DD
+     *
+     * @return array
      */
     public function getData(string $id)
     {
@@ -27,6 +29,10 @@ class MobitechFiles
         // Get external file list.
         $url = sprintf(config('ragnarok_mobitech.file_list_url'), $id);
         $result = Http::withToken(MobitechAuth::getApiToken())->get($url)->json();
+        if (!isset($result['paths'])) {
+            $this->warning('No transactions available for %s', $id);
+            return [];
+        }
 
         // Download all files.
         $data = [];
