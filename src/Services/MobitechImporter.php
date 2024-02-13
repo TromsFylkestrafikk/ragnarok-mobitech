@@ -15,6 +15,14 @@ class MobitechImporter
         $this->logPrintfInit('[MobitechImporter]: ');
     }
 
+    /**
+     * Importing transaction data from json file.
+     *
+     * @param string $id Chunk ID. Date on format YYYY-MM-DD
+     * @param string $file Path to source file
+     *
+     * @return $this
+     */
     public function import(string $id, string $file)
     {
         $transaction = json_decode(file_get_contents($file));
@@ -43,12 +51,18 @@ class MobitechImporter
             'seq_video'             => $transaction->Trip->SeqVideo,
             'transaction_type'      => $transaction->TransactionType,
             'app_version'           => $transaction->AppVersion,
-            'netex_id'              => $transaction->NetexId,
             'is_approved'           => (int) $transaction->Approval->IsApproved,
         ]);
         return $this;
     }
 
+    /**
+     * Deleting imported transactions with the specified ID/date.
+     *
+     * @param string $id Chunk ID. Date on format YYYY-MM-DD
+     *
+     * @return $this
+     */
     public function deleteImport(string $id)
     {
         $count = Transaction::whereDate('chunk_date', $id)->delete();

@@ -14,16 +14,13 @@ return new class extends Migration
         Schema::create('mobitech_transactions', function (Blueprint $table)
         {
             $table->date('chunk_date')->index()->comment('The dated chunk this transaction belongs to');
-
             $table->string('obu_issuer_id')->nullable();
-
             $table->integer('line_id')->comment('Line ID');
             $table->string('actor_id');
             $table->string('lane');
             $table->integer('device_type');
             $table->integer('device_id');
             $table->string('validation_file');
-
             $table->string('operator_reference');
             $table->string('tour_id');
             $table->dateTime('departure')->comment('Departure time');
@@ -38,13 +35,9 @@ return new class extends Migration
             $table->integer('ocr_confidence_front');
             $table->integer('seq_lc');
             $table->integer('seq_video')->comment('Video sequence number');
-
             $table->string('transaction_type');
             $table->string('app_version');
-            $table->string('netex_id')->nullable();
-
             $table->smallInteger('is_approved');
-
             $table->primary([
                 'chunk_date',
                 'operator_reference',

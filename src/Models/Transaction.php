@@ -36,7 +36,6 @@ class Transaction extends Model
         'seq_video',
         'transaction_type',
         'app_version',
-        'netex_id',
         'is_approved',
     ];
 }
