@@ -28,7 +28,7 @@ class SinkMobitech extends SinkBase
      */
     public function getFromDate(): Carbon
     {
-        return new Carbon('2023-12-11');
+        return new Carbon('2023-12-20');
     }
 
     /**
