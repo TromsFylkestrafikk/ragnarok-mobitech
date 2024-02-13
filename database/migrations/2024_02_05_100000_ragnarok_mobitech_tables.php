@@ -16,13 +16,13 @@ return new class extends Migration
             $table->date('chunk_date')->index()->comment('The dated chunk this transaction belongs to');
             $table->string('obu_issuer_id')->nullable();
             $table->integer('line_id')->comment('Line ID');
-            $table->string('actor_id');
+            $table->integer('actor_id');
             $table->string('lane');
             $table->integer('device_type');
             $table->integer('device_id');
             $table->string('validation_file');
             $table->string('operator_reference');
-            $table->string('tour_id');
+            $table->integer('tour_id');
             $table->dateTime('departure')->comment('Departure time');
             $table->dateTime('registered')->comment('Transaction registration time');
             $table->string('stop_place_id_entry');
@@ -43,6 +43,28 @@ return new class extends Migration
                 'operator_reference',
             ], 'transactions_pk');
         });
+
+        Schema::create('mobitech_statistics', function (Blueprint $table)
+        {
+            $table->date('chunk_date')->index();
+            $table->integer('actor_id');
+            $table->integer('line_id')->comment('Line ID');
+            $table->integer('tour_id');
+            $table->string('operator_reference');
+            $table->dateTime('departure')->comment('Departure time');
+            $table->dateTime('registered')->comment('Registration time');
+            $table->string('stop_place_id_entry');
+            $table->string('stop_place_id_exit');
+            $table->string('statistic_name')->nullable();
+            $table->integer('statistic_count')->nullable();
+            $table->integer('automatic_passenger_count')->nullable();
+            $table->integer('manual_passenger_count')->nullable();
+            $table->integer('remaining_vehicle_count')->nullable();
+            $table->primary([
+                'chunk_date',
+                'operator_reference',
+            ], 'statistics_pk');
+        });
     }
 
     /**
@@ -51,5 +73,6 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('mobitech_transactions');
+        Schema::dropIfExists('mobitech_statistics');
     }
 };

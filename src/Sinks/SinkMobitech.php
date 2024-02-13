@@ -21,6 +21,7 @@ class SinkMobitech extends SinkBase
     public function destinationTables(): array
     {
         return [
+            'mobitech_statistics'   => 'Passenger statistics from Mobitech/ORCA',
             'mobitech_transactions' => 'Transactions from Mobitech/ORCA',
         ];
     }
