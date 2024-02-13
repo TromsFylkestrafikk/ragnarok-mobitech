@@ -23,6 +23,7 @@ class MobitechFiles
 
         // Torghatten Nord
         '101677/ferry-statistics/%s',
+        '101677/orca-transactions/%s',
         '101677/statistics/legs/%s',
 
         // Boreal
@@ -61,6 +62,7 @@ class MobitechFiles
             // Download all files.
             $fileCount = 0;
             foreach ($result['paths'] as $fileInfo) {
+                set_time_limit(60);
                 $url = sprintf(config('ragnarok_mobitech.download_url'), $fileInfo['name']);
                 $content = Http::withToken(MobitechAuth::getApiToken())->get($url)->body();
 
