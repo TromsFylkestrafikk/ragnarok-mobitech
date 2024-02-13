@@ -20,7 +20,10 @@ class SinkMobitech extends SinkBase
      */
     public function destinationTables(): array
     {
-        return [];
+        return [
+            'mobitech_statistics'   => 'Passenger statistics from Mobitech/ORCA',
+            'mobitech_transactions' => 'Transactions from Mobitech/ORCA',
+        ];
     }
 
     /**
@@ -56,7 +59,17 @@ class SinkMobitech extends SinkBase
      */
     public function import(string $id, SinkFile $file): int
     {
-        return 0;
+        // Delete existing import for this date, if any.
+        MobitechImporter::deleteImport($id);
+
+        // Import data from chunk file.
+        $count = 0;
+        $extractor = new ChunkExtractor(static::$id, $file);
+        foreach ($extractor->getFiles() as $filepath) {
+            MobitechImporter::import($id, $filepath);
+            $count += 1;
+        }
+        return $count;
     }
 
     /**
@@ -64,6 +77,7 @@ class SinkMobitech extends SinkBase
      */
     public function deleteImport(string $id, SinkFile $file): bool
     {
+        MobitechImporter::deleteImport($id);
         return true;
     }
 
