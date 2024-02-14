@@ -47,6 +47,7 @@ class MobitechFiles
     public function getData(string $id)
     {
         $this->debug('Fetching Mobitech data with id %s...', $id);
+        $this->checkExpirationDate();
         $data = [];
         $total = 0;
         foreach ($this->folders as $folder) {
@@ -77,5 +78,18 @@ class MobitechFiles
         }
         $this->debug('Total: %d file(s)', $total);
         return $data;
+    }
+
+    protected function checkExpirationDate()
+    {
+        $today = date('Y-m-d');
+        $expDate = config('ragnarok_mobitech.expiration_date');
+        $warnDate = date('Y-m-d', strtotime("$expDate -10 days"));
+        if ($today < $warnDate) return;
+        if ($today > $expDate) {
+            $this->error('User credentials expired on %s!', $expDate);
+        } else {
+            $this->warning('User credentials will expire on %s.', $expDate);
+        }
     }
 }

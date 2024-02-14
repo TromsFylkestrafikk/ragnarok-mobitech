@@ -3,6 +3,7 @@
 return [
     'client_id' => env('MOBITECH_CLIENT_ID'),
     'client_secret' => env('MOBITECH_CLIENT_SECRET'),
+    'expiration_date' => env('MOBITECH_EXPIRATION_DATE'),
     'download_url' => env('MOBITECH_DOWNLOAD_URL'),
     'file_list_url' => env('MOBITECH_FILE_LIST_URL'),
     'scope' => env('MOBITECH_SCOPE'),
