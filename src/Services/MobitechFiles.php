@@ -38,7 +38,7 @@ class MobitechFiles
     }
 
     /**
-     * Fetching data from Mobitech's via their Data Lake Gen 2 API.
+     * Fetching data from Mobitech via their Data Lake Gen 2 API.
      *
      * @param string $id Chunk ID. Date on format YYYY-MM-DD
      *

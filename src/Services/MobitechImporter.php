@@ -17,7 +17,7 @@ class MobitechImporter
     }
 
     /**
-     * Importing transaction data from json file.
+     * Importing transaction/statistics data from json file.
      *
      * @param string $id Chunk ID. Date on format YYYY-MM-DD
      * @param string $file Path to source file
@@ -37,7 +37,7 @@ class MobitechImporter
                 'device_type'           => $transaction->SalesPlace->DeviceType,
                 'device_id'             => $transaction->SalesPlace->DeviceId,
                 'validation_file'       => $transaction->SalesPlace->ValidationFile,
-                'operator_reference'    => $transaction->Trip->OperatorReference,
+                'operator_reference'    => strtoupper($transaction->Trip->OperatorReference),
                 'tour_id'               => $transaction->Trip->TourId,
                 'departure'             => $transaction->Trip->Departure,
                 'registered'            => $transaction->Trip->Registered,
@@ -63,7 +63,7 @@ class MobitechImporter
             'actor_id'                  => $statistics->ActorId,
             'line_id'                   => $statistics->LineId,
             'tour_id'                   => $statistics->TourId,
-            'operator_reference'        => $statistics->OperatorReference,
+            'operator_reference'        => strtoupper($statistics->OperatorReference),
             'departure'                 => $statistics->Departure,
             'registered'                => $statistics->Registered,
             'stop_place_id_entry'       => $statistics->StopPlaceIdEntry ?? $statistics->Voyage->StopPlaceIdEntry,
@@ -74,6 +74,7 @@ class MobitechImporter
             'manual_passenger_count'    => $statistics->ManualPassengerCount ?? null,
             'remaining_vehicle_count'   => $statistics->RemainingVehicleCount ?? null,
         ]);
+        return $this;
     }
 
     /**
