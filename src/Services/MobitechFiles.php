@@ -56,7 +56,10 @@ class MobitechFiles
             $url = sprintf(config('ragnarok_mobitech.file_list_url'), $dir);
             $result = Http::withToken(MobitechAuth::getApiToken())->get($url)->json();
             if (!isset($result['paths'])) {
-                $this->warning('No files found in external folder %s', $dir);
+                if (strpos($dir, 'transactions') !== false) {
+                    // No transactions found.
+                    $this->warning('No files found in external folder %s', $dir);
+                }
                 continue;
             }
 
