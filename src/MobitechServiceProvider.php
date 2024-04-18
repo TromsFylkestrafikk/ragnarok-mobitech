@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Ragnarok\Mobitech\Sinks\SinkMobitech;
 use Ragnarok\Sink\Facades\SinkRegistrar;
 
-class RagnarokMobitechServiceProvider extends ServiceProvider
+class MobitechServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap any application services.
@@ -45,10 +45,10 @@ class RagnarokMobitechServiceProvider extends ServiceProvider
     }
 
     /**
-    * Get route group configuration array.
-    *
-    * @return array
-    */
+     * Get route group configuration array.
+     *
+     * @return array
+     */
     private function routeConfiguration(): array
     {
         return [

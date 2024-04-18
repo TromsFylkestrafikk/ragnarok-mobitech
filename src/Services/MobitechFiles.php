@@ -57,14 +57,13 @@ class MobitechFiles
             $result = Http::withToken(MobitechAuth::getApiToken())->get($url)->json();
             if (!isset($result['paths'])) {
                 if (strpos($dir, 'transactions') !== false) {
-                    // No transactions found.
-                    $this->warning('No files found in external folder %s', $dir);
+                    $this->notice('No files found in external folder %s', $dir);
                 }
                 continue;
             }
 
             // Download all files.
-            $fileCount = 0;
+            $fileCount = count($result['paths']);
             foreach ($result['paths'] as $fileInfo) {
                 set_time_limit(60);
                 $url = sprintf(config('ragnarok_mobitech.download_url'), $fileInfo['name']);
@@ -74,7 +73,6 @@ class MobitechFiles
                 $pathName = str_replace('/', '_', $folder);
                 $filename = sprintf($pathName, basename($fileInfo['name']));
                 $data[$filename] = $content;
-                $fileCount += 1;
             }
             $total += $fileCount;
             $this->debug('Downloaded %d file(s) from %s', $fileCount, $dir);
