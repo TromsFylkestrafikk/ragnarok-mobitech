@@ -1,5 +1,9 @@
 # Change Log
 
+## [Unreleased]
+### Removed
+- Removed lots of unused db columns.
+
 ## [0.1.0] – 2024-04-18
 ### Added
 - Implemented sink API for stage 1: Raw retrieval (fetch)
