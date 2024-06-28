@@ -30,13 +30,8 @@ class MobitechImporter
             $transaction = json_decode(file_get_contents($file));
             Transaction::create([
                 'chunk_date'            => new Carbon($id),
-                'obu_issuer_id'         => $transaction->Obu->ObuIssuerId,
                 'line_id'               => $transaction->SalesPlace->LineId,
                 'actor_id'              => $transaction->SalesPlace->ActorId,
-                'lane'                  => $transaction->SalesPlace->Lane,
-                'device_type'           => $transaction->SalesPlace->DeviceType,
-                'device_id'             => $transaction->SalesPlace->DeviceId,
-                'validation_file'       => $transaction->SalesPlace->ValidationFile,
                 'operator_reference'    => strtoupper($transaction->Trip->OperatorReference),
                 'tour_id'               => $transaction->Trip->TourId,
                 'departure'             => $transaction->Trip->Departure,
@@ -44,15 +39,10 @@ class MobitechImporter
                 'stop_place_id_entry'   => $transaction->Trip->StopPlaceIdEntry,
                 'stop_place_id_exit'    => $transaction->Trip->StopPlaceIdExit,
                 'trailer'               => (int) $transaction->Trip->Trailer,
-                'signal_code'           => $transaction->Trip->SignalCode,
-                'measured_length'       => $transaction->Trip->MeasuredLength,
                 'tariff_class'          => $transaction->Trip->TariffClass,
                 'nation_lpn_front'      => $transaction->Trip->NationLpnFront,
                 'ocr_confidence_front'  => $transaction->Trip->OcrConfidenceFront,
-                'seq_lc'                => $transaction->Trip->SeqLc,
-                'seq_video'             => $transaction->Trip->SeqVideo,
                 'transaction_type'      => $transaction->TransactionType,
-                'app_version'           => $transaction->AppVersion,
                 'is_approved'           => (int) $transaction->Approval->IsApproved,
             ]);
             return $this;
