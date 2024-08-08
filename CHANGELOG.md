@@ -1,6 +1,10 @@
 # Change Log
 
 ## [Unreleased]
+
+### Added
+- Documentation of sink (`SINK.md`).
+
 ### Removed
 - Removed lots of unused db columns.
 
