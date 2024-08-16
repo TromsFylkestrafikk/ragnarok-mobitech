@@ -5,6 +5,10 @@
 ### Added
 - Documentation of sink (`SINK.md`).
 
+### Fixed
+- Import failed for transactions with `tour_id` exceeding the INTEGER
+  range.
+
 ### Removed
 - Removed lots of unused db columns.
 
