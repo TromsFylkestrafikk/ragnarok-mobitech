@@ -5,6 +5,11 @@
 ### Added
 - Documentation of sink (`SINK.md`).
 
+### Fixed
+- Import failed for transactions with `tour_id` exceeding the INTEGER
+  range. To prevent future problems, all INTEGER ID columns were
+  widened to BIGINT and CHAR columns set to CHAR(255).
+
 ### Removed
 - Removed lots of unused db columns.
 
