@@ -26,6 +26,10 @@ class MobitechImporter
      */
     public function import(string $id, string $file)
     {
+        if (strpos($file, 'softpay') !== false) {
+            // Ignoring these transactions for now.
+            return $this;
+        }
         if (strpos($file, 'statistics') === false) {
             $transaction = json_decode(file_get_contents($file));
             Transaction::create([
