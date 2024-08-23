@@ -67,8 +67,7 @@ class SinkMobitech extends SinkBase
         $count = 0;
         $extractor = new ChunkExtractor(static::$id, $file);
         foreach ($extractor->getFiles() as $filepath) {
-            MobitechImporter::import($id, $filepath);
-            $count += 1;
+            $count += MobitechImporter::import($id, $filepath);
         }
         return $count;
     }

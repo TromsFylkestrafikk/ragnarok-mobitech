@@ -22,15 +22,15 @@ class MobitechImporter
      * @param string $id Chunk ID. Date on format YYYY-MM-DD
      * @param string $file Path to source file
      *
-     * @return $this
+     * @return int Number of rows imported
      */
     public function import(string $id, string $file)
     {
         if (strpos($file, 'softpay') !== false) {
             // Ignoring these transactions for now.
-            return $this;
+            return 0;
         }
-        if (strpos($file, 'statistics') === false) {
+        if (strpos($file, 'orca') !== false) {
             $transaction = json_decode(file_get_contents($file));
             Transaction::create([
                 'chunk_date'            => new Carbon($id),
@@ -49,26 +49,29 @@ class MobitechImporter
                 'transaction_type'      => $transaction->TransactionType,
                 'is_approved'           => (int) $transaction->Approval->IsApproved,
             ]);
-            return $this;
+            return 1;
         }
-        $statistics = json_decode(file_get_contents($file));
-        Statistics::create([
-            'chunk_date'                => new Carbon($id),
-            'actor_id'                  => $statistics->ActorId,
-            'line_id'                   => $statistics->LineId,
-            'tour_id'                   => $statistics->TourId,
-            'operator_reference'        => strtoupper($statistics->OperatorReference),
-            'departure'                 => $statistics->Departure,
-            'registered'                => $statistics->Registered,
-            'stop_place_id_entry'       => $statistics->StopPlaceIdEntry ?? $statistics->Voyage->StopPlaceIdEntry,
-            'stop_place_id_exit'        => $statistics->StopPlaceIdExit ?? $statistics->Voyage->StopPlaceIdExit,
-            'statistic_name'            => $statistics->StatisticName ?? null,
-            'statistic_count'           => $statistics->StatisticCount ?? null,
-            'automatic_passenger_count' => $statistics->AutomaticPassengerCount ?? null,
-            'manual_passenger_count'    => $statistics->ManualPassengerCount ?? null,
-            'remaining_vehicle_count'   => $statistics->RemainingVehicleCount ?? null,
-        ]);
-        return $this;
+        if (strpos($file, 'statistics') !== false) {
+            $statistics = json_decode(file_get_contents($file));
+            Statistics::create([
+                'chunk_date'                => new Carbon($id),
+                'actor_id'                  => $statistics->ActorId,
+                'line_id'                   => $statistics->LineId,
+                'tour_id'                   => $statistics->TourId,
+                'operator_reference'        => strtoupper($statistics->OperatorReference),
+                'departure'                 => $statistics->Departure,
+                'registered'                => $statistics->Registered,
+                'stop_place_id_entry'       => $statistics->StopPlaceIdEntry ?? $statistics->Voyage->StopPlaceIdEntry,
+                'stop_place_id_exit'        => $statistics->StopPlaceIdExit ?? $statistics->Voyage->StopPlaceIdExit,
+                'statistic_name'            => $statistics->StatisticName ?? null,
+                'statistic_count'           => $statistics->StatisticCount ?? null,
+                'automatic_passenger_count' => $statistics->AutomaticPassengerCount ?? null,
+                'manual_passenger_count'    => $statistics->ManualPassengerCount ?? null,
+                'remaining_vehicle_count'   => $statistics->RemainingVehicleCount ?? null,
+            ]);
+            return 1;
+        }
+        return 0;
     }
 
     /**
