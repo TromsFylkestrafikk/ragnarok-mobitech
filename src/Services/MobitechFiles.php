@@ -4,6 +4,7 @@ namespace Ragnarok\Mobitech\Services;
 
 use Illuminate\Support\Facades\Http;
 use Ragnarok\Mobitech\Facades\MobitechAuth;
+use Ragnarok\Sink\Services\LocalFile;
 use Ragnarok\Sink\Traits\LogPrintf;
 
 class MobitechFiles
@@ -19,16 +20,19 @@ class MobitechFiles
         // Norled
         '101010/ferry-statistics/%s',
         '101010/orca-transactions/%s',
+        '101010/softpay-transactions/%s',
         '101010/statistics/legs/%s',
 
         // Torghatten Nord
         '101677/ferry-statistics/%s',
         '101677/orca-transactions/%s',
+        '101677/softpay-transactions/%s',
         '101677/statistics/legs/%s',
 
         // Boreal
         '101678/ferry-statistics/%s',
         '101678/orca-transactions/%s',
+        '101678/softpay-transactions/%s',
         '101678/statistics/legs/%s',
     ];
 
@@ -38,15 +42,52 @@ class MobitechFiles
     }
 
     /**
-     * Fetching data from Mobitech via their Data Lake Gen 2 API.
+     * Fetching data from Mobitech as a single ZIP file.
      *
-     * @param string $id Chunk ID. Date on format YYYY-MM-DD
+     * @param string $sinkId Sink ID.
+     * @param string $chunkId Chunk ID. Date on format YYYY-MM-DD.
      *
-     * @return array
+     * @return SinkFile|null
      */
-    public function getData(string $id)
+    public function getChunkAsZip(string $sinkId, string $chunkId)
     {
-        $this->debug('Fetching Mobitech data with id %s...', $id);
+        $this->debug('Fetching Mobitech data (ZIP file) with id %s...', $chunkId);
+        $this->checkExpirationDate();
+        $filename = sprintf('%s.zip', $chunkId);
+        $content = $this->downloadZipFile($filename);
+        if (!$content) return null;
+        $local = LocalFile::find($sinkId, $filename);
+        if (!$local) {
+            $local = LocalFile::createFromFilename($sinkId, $filename);
+        }
+        $local->put($content);
+        return $local->getFile();
+    }
+
+    /**
+     * @param string $filename ZIP filename.
+     *
+     * @return string|null ZIP file content.
+     */
+    protected function downloadZipFile(string $filename)
+    {
+        $path = sprintf('by-date-zipped/%s', $filename);
+        $url = sprintf(config('ragnarok_mobitech.download_url'), $path);
+        $response = Http::withToken(MobitechAuth::getApiToken())->get($url);
+        return $response->successful() ? $response->body() : null;
+    }
+
+    /**
+     * Fetching data from Mobitech as individual files. This is a very slow
+     * download method due to the high number of small files.
+     *
+     * @param string $id Chunk ID. Date on format YYYY-MM-DD.
+     *
+     * @return array File content, keyed by filename.
+     */
+    public function getChunkAsFiles(string $id)
+    {
+        $this->debug('Fetching Mobitech data (individual files) with id %s...', $id);
         $this->checkExpirationDate();
         $data = [];
         $total = 0;
@@ -56,7 +97,7 @@ class MobitechFiles
             $url = sprintf(config('ragnarok_mobitech.file_list_url'), $dir);
             $result = Http::withToken(MobitechAuth::getApiToken())->get($url)->json();
             if (!isset($result['paths'])) {
-                if (strpos($dir, 'transactions') !== false) {
+                if (strpos($dir, 'orca-transactions') !== false) {
                     $this->notice('No files found in external folder %s', $dir);
                 }
                 continue;

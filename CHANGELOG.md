@@ -4,6 +4,7 @@
 
 ### Added
 - Documentation of sink (`SINK.md`).
+- Support for downloading/import of ZIP'ed data from Mobitech.
 
 ### Fixed
 - Import failed for transactions with `tour_id` exceeding the INTEGER
