@@ -48,8 +48,11 @@ class SinkMobitech extends SinkBase
      */
     public function fetch(string $id): SinkFile|null
     {
+        if ($id > '2024-08-05') {
+            return MobitechFiles::getChunkAsZip(static::$id, $id);
+        }
         $archive = new ChunkArchive(static::$id, $id);
-        foreach (MobitechFiles::getData($id) as $filename => $content) {
+        foreach (MobitechFiles::getChunkAsFiles($id) as $filename => $content) {
             $archive->addFromString($filename, $content);
         }
         return $archive->save()->getFile();
@@ -66,7 +69,7 @@ class SinkMobitech extends SinkBase
         // Import data from chunk file.
         $count = 0;
         $extractor = new ChunkExtractor(static::$id, $file);
-        foreach ($extractor->getFiles() as $filepath) {
+        foreach ($extractor->getFiles(true) as $filepath) {
             $count += MobitechImporter::import($id, $filepath);
         }
         return $count;

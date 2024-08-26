@@ -2,20 +2,14 @@
 
 namespace Ragnarok\Mobitech\Services;
 
-use Archive7z\Archive7z;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
 use Ragnarok\Mobitech\Facades\MobitechAuth;
+use Ragnarok\Sink\Services\LocalFile;
 use Ragnarok\Sink\Traits\LogPrintf;
 
 class MobitechFiles
 {
     use LogPrintf;
-
-    /**
-     * @var Filesystem
-     */
-    protected $tmpDisk;
 
     /**
      * External folders to download data from.
@@ -48,27 +42,55 @@ class MobitechFiles
     }
 
     /**
-     * Fetching data from Mobitech via their Data Lake Gen 2 API.
+     * Fetching data from Mobitech as a single ZIP file.
      *
-     * @param string $id Chunk ID. Date on format YYYY-MM-DD
+     * @param string $sinkId Sink ID.
+     * @param string $chunkId Chunk ID. Date on format YYYY-MM-DD.
      *
-     * @return array
+     * @return SinkFile|null
      */
-    public function getData(string $id)
+    public function getChunkAsZip(string $sinkId, string $chunkId)
     {
-        $this->debug('Fetching Mobitech data with id %s...', $id);
+        $this->debug('Fetching Mobitech data (ZIP file) with id %s...', $chunkId);
         $this->checkExpirationDate();
-
-        // Trying primary download method first.
-        $data = $this->getZipData($id);
-        $total = count($data);
-        if ($total > 0) {
-            // ZIP file content was found and collected.
-            return $data;
+        $filename = sprintf('%s.zip', $chunkId);
+        $content = $this->downloadZipFile($filename);
+        if (!$content) return null;
+        $local = LocalFile::find($sinkId, $filename);
+        if (!$local) {
+            $local = LocalFile::createFromFilename($sinkId, $filename);
         }
+        $local->put($content);
+        return $local->getFile();
+    }
 
-        // Secondary download method: Downloading individual files is very slow
-        // due to the high number of small files.
+    /**
+     * @param string $filename ZIP filename.
+     *
+     * @return string|null ZIP file content.
+     */
+    protected function downloadZipFile(string $filename)
+    {
+        $path = sprintf('by-date-zipped/%s', $filename);
+        $url = sprintf(config('ragnarok_mobitech.download_url'), $path);
+        $response = Http::withToken(MobitechAuth::getApiToken())->get($url);
+        return $response->successful() ? $response->body() : null;
+    }
+
+    /**
+     * Fetching data from Mobitech as individual files. This is a very slow
+     * download method due to the high number of small files.
+     *
+     * @param string $id Chunk ID. Date on format YYYY-MM-DD.
+     *
+     * @return array File content, keyed by filename.
+     */
+    public function getChunkAsFiles(string $id)
+    {
+        $this->debug('Fetching Mobitech data (individual files) with id %s...', $id);
+        $this->checkExpirationDate();
+        $data = [];
+        $total = 0;
         foreach ($this->folders as $folder) {
             // Get external file list.
             $dir = sprintf($folder, $id);
@@ -98,75 +120,6 @@ class MobitechFiles
         }
         $this->debug('Total: %d file(s)', $total);
         return $data;
-    }
-
-    /**
-     * Primary download method: Downloading a single ZIP file containing all
-     * transactions and statistics for the given date, but this archive has
-     * a deep directory structure and therefore needs to be extracted and
-     * flattened with modified filenames.
-     *
-     * @param string $id Chunk ID. Date on format YYYY-MM-DD
-     *
-     * @return array Extracted file content. Will be empty if error occurs.
-     */
-    public function getZipData(string $id): array
-    {
-        $data = [];
-        $path = sprintf('by-date-zipped/%s.zip', $id);
-        $url = sprintf(config('ragnarok_mobitech.download_url'), $path);
-        $response = Http::withToken(MobitechAuth::getApiToken())->get($url);
-        if ($response->successful()) {
-            // Store zip file in temporary folder.
-            $outputDir = uniqid("mobitech-{$id}");
-            $this->getDisk()->makeDirectory($outputDir);
-            $zipFile = sprintf('%s/%s.zip', $outputDir, $id);
-            $this->getDisk()->put($zipFile, $response->body());
-
-            // Extract zip file.
-            $this->debug('Extracting ZIP file (%s)...', basename($path));
-            $archive = new Archive7z($this->getDisk()->path($zipFile));
-            if (!$archive->isValid()) {
-                $this->error('Invalid archive! Trying secondary download method instead...');
-                $this->getDisk()->deleteDirectory($outputDir);
-                return [];
-            }
-            $archive->setOutputDirectory($this->getDisk()->path($outputDir))->extract();
-
-            // Collect content from extracted files.
-            $total = 0;
-            foreach ($this->folders as $folder) {
-                $dir = sprintf('%s/by-date/%s/%s', $outputDir, $id, rtrim($folder, '%s'));
-                $files = $this->getDisk()->files($dir);
-                $fileCount = count($files);
-                foreach ($files as $filepath) {
-                    $content = $this->getDisk()->get($filepath);
-
-                    // Constructing a human readable filename for the content.
-                    $pathName = str_replace('/', '_', $folder);
-                    $filename = sprintf($pathName, basename($filepath));
-                    $data[$filename] = $content;
-                }
-                if ($fileCount > 0) {
-                    $total += $fileCount;
-                    $this->debug('Extracted %d file(s) from %s', $fileCount, sprintf($folder, null));
-                }
-            }
-            $this->debug('Total: %d file(s)', $total);
-            $this->getDisk()->deleteDirectory($outputDir);
-        }
-        return $data;
-    }
-
-    /**
-     * @return Filesystem Temporary local storage.
-     */
-    public function getDisk()
-    {
-        if (!$this->tmpDisk) {
-            $this->tmpDisk = Storage::disk(config('ragnarok_mobitech.tmp_disk'));
-        }
-        return $this->tmpDisk;
     }
 
     protected function checkExpirationDate()
