@@ -3,6 +3,7 @@
 namespace Ragnarok\Mobitech\Services;
 
 use Illuminate\Support\Carbon;
+use Ragnarok\Mobitech\Models\SoftpayTransaction;
 use Ragnarok\Mobitech\Models\Statistics;
 use Ragnarok\Mobitech\Models\Transaction;
 use Ragnarok\Sink\Traits\LogPrintf;
@@ -27,8 +28,36 @@ class MobitechImporter
     public function import(string $id, string $file)
     {
         if (strpos($file, 'softpay') !== false) {
-            // Ignoring these transactions for now.
-            return 0;
+            $softpay = json_decode(file_get_contents($file));
+            SoftpayTransaction::create([
+                'chunk_date'            => new Carbon($id),
+                'operator_reference'    => strtoupper($softpay->OperatorReference),
+                'departure'             => $softpay->Departure,
+                'line_id'               => $softpay->LineId,
+                'tour_id'               => $softpay->TourId,
+                'stop_place_id_entry'   => $softpay->StopPlaceIdEntry,
+                'stop_place_id_exit'    => $softpay->StopPlaceIdExit,
+                'actor_id'              => $softpay->ActorId,
+                'country_code'          => $softpay->CountryCode,
+                'transaction_number'    => $softpay->TransactionNumber,
+                'trailer'               => $softpay->Trailer,
+                'tariff_class'          => $softpay->TariffClass,
+                'receipt_id'            => $softpay->Identification->ReceiptId,
+                'batch_number'          => $softpay->Identification->BatchNumber,
+                'terminal_id'           => $softpay->Identification->TerminalId,
+                'merchant_org_number'   => $softpay->Merchant->OrganizationNumber,
+                'merchant_name'         => $softpay->Merchant->Name,
+                'card_scheme'           => $softpay->Card->Scheme,
+                'processed'             => $softpay->Payment->ProcessedAtUtc,
+                'local_time'            => str_replace('.', ':', $softpay->Payment->LocalTime),
+                'currency'              => $softpay->Payment->Currency,
+                'amount_paid'           => $softpay->Payment->AmountPaid,
+                'net_amount'            => $softpay->Payment->Details->NetAmount,
+                'vat'                   => $softpay->Payment->Details->Vat,
+                'vat_rate'              => $softpay->Payment->Details->VatRate,
+                'transaction_reference' => strtoupper($softpay->TransactionReferences[0]->OperatorReference),
+            ]);
+            return 1;
         }
         if (strpos($file, 'orca') !== false) {
             $transaction = json_decode(file_get_contents($file));
@@ -85,6 +114,7 @@ class MobitechImporter
     {
         $count = Transaction::whereDate('chunk_date', $id)->delete();
         $count += Statistics::whereDate('chunk_date', $id)->delete();
+        $count += SoftpayTransaction::whereDate('chunk_date', $id)->delete();
         $this->debug('Deleted %d records with chunk date %s', $count, $id);
         return $this;
     }
