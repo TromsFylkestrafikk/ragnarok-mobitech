@@ -15,7 +15,7 @@ return new class extends Migration
         {
             $table->date('chunk_date')->index()->comment('The dated chunk this Softpay transaction belongs to');
             $table->char('operator_reference')->comment('Mobitech/Skyttel operator reference');
-            $table->dateTime('departure')->comment('Departure time (GMT)');
+            $table->dateTime('departure')->comment('Departure time');
             $table->bigInteger('line_id')->comment('Skyttel (sales place) line ID');
             $table->bigInteger('tour_id')->comment('Skyttel (transaction trips) tour ID');
             $table->bigInteger('stop_place_id_entry')->comment('Skyttel stop place ID (start)');
@@ -31,9 +31,7 @@ return new class extends Migration
             $table->bigInteger('merchant_org_number')->comment('Organization number');
             $table->char('merchant_name');
             $table->char('card_scheme')->comment('Card type used for payment');
-            $table->dateTime('processed')->comment('Time stamp (GMT) for payment');
-            $table->time('local_time')->comment('Local time for payment');
-            $table->char('currency');
+            $table->dateTime('processed')->comment('Time for when the payment was processed');
             $table->float('amount_paid');
             $table->float('net_amount');
             $table->float('vat');

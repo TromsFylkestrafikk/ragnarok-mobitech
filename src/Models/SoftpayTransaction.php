@@ -31,8 +31,6 @@ class SoftpayTransaction extends Model
         'merchant_name',
         'card_scheme',
         'processed',
-        'local_time',
-        'currency',
         'amount_paid',
         'net_amount',
         'vat',

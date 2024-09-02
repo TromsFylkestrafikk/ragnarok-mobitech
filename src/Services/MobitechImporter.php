@@ -48,9 +48,7 @@ class MobitechImporter
                 'merchant_org_number'   => $softpay->Merchant->OrganizationNumber,
                 'merchant_name'         => $softpay->Merchant->Name,
                 'card_scheme'           => $softpay->Card->Scheme,
-                'processed'             => $softpay->Payment->ProcessedAtUtc,
-                'local_time'            => str_replace('.', ':', $softpay->Payment->LocalTime),
-                'currency'              => $softpay->Payment->Currency,
+                'processed'             => $this->addTimeOffset($softpay->Payment->ProcessedAtUtc, $softpay->Payment->LocalTime),
                 'amount_paid'           => $softpay->Payment->AmountPaid,
                 'net_amount'            => $softpay->Payment->Details->NetAmount,
                 'vat'                   => $softpay->Payment->Details->Vat,
@@ -101,6 +99,32 @@ class MobitechImporter
             return 1;
         }
         return 0;
+    }
+
+    /**
+     * Add time offset +00:00 for GMT time if absent and appropriate.
+     *
+     * @param string $dateStr Date and time in UTC format.
+     * @param string $localTime Local time in 24h format. No date.
+     *
+     * @return string
+     */
+    protected function addTimeOffset(string $dateStr, string $localTime): string
+    {
+        if (strpos($dateStr, '+') !== false) {
+            // Time offset seems to be present. No conversion needed.
+            return $dateStr;
+        }
+        // Input may actually be local time without an offset, and in this case
+        // we can't reliably add a time offset.
+        $dateStr = rtrim($dateStr, 'Z');
+        $dateTime = explode('T', $dateStr);
+        if (strncmp($dateTime[1], $localTime, 2) === 0) {
+            // The hour values are identical, so it must be local time.
+            return $dateStr;
+        }
+        // Add GMT offset.
+        return sprintf('%s+00:00', $dateStr);
     }
 
     /**
