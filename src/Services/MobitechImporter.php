@@ -27,78 +27,98 @@ class MobitechImporter
      */
     public function import(string $id, string $file)
     {
-        if (strpos($file, 'softpay') !== false) {
-            $softpay = json_decode(file_get_contents($file));
-            SoftpayTransaction::create([
-                'chunk_date'            => new Carbon($id),
-                'operator_reference'    => strtoupper($softpay->OperatorReference),
-                'departure'             => $softpay->Departure,
-                'line_id'               => $softpay->LineId,
-                'tour_id'               => $softpay->TourId,
-                'stop_place_id_entry'   => $softpay->StopPlaceIdEntry,
-                'stop_place_id_exit'    => $softpay->StopPlaceIdExit,
-                'actor_id'              => $softpay->ActorId,
-                'country_code'          => $softpay->CountryCode,
-                'transaction_number'    => $softpay->TransactionNumber,
-                'trailer'               => $softpay->Trailer,
-                'tariff_class'          => $softpay->TariffClass,
-                'receipt_id'            => $softpay->Identification->ReceiptId,
-                'batch_number'          => $softpay->Identification->BatchNumber,
-                'terminal_id'           => $softpay->Identification->TerminalId,
-                'merchant_org_number'   => $softpay->Merchant->OrganizationNumber,
-                'merchant_name'         => $softpay->Merchant->Name,
-                'card_scheme'           => $softpay->Card->Scheme,
-                'processed'             => $this->addTimeOffset($softpay->Payment->ProcessedAtUtc, $softpay->Payment->LocalTime),
-                'amount_paid'           => $softpay->Payment->AmountPaid,
-                'net_amount'            => $softpay->Payment->Details->NetAmount,
-                'vat'                   => $softpay->Payment->Details->Vat,
-                'vat_rate'              => $softpay->Payment->Details->VatRate,
-                'transaction_reference' => strtoupper($softpay->TransactionReferences[0]->OperatorReference),
-            ]);
-            return 1;
-        }
-        if (strpos($file, 'orca') !== false) {
-            $transaction = json_decode(file_get_contents($file));
-            Transaction::create([
-                'chunk_date'            => new Carbon($id),
-                'line_id'               => $transaction->SalesPlace->LineId,
-                'actor_id'              => $transaction->SalesPlace->ActorId,
-                'operator_reference'    => strtoupper($transaction->Trip->OperatorReference),
-                'tour_id'               => $transaction->Trip->TourId,
-                'departure'             => $transaction->Trip->Departure,
-                'registered'            => $transaction->Trip->Registered,
-                'stop_place_id_entry'   => $transaction->Trip->StopPlaceIdEntry,
-                'stop_place_id_exit'    => $transaction->Trip->StopPlaceIdExit,
-                'trailer'               => (int) $transaction->Trip->Trailer,
-                'tariff_class'          => $transaction->Trip->TariffClass,
-                'nation_lpn_front'      => $transaction->Trip->NationLpnFront,
-                'ocr_confidence_front'  => $transaction->Trip->OcrConfidenceFront,
-                'transaction_type'      => $transaction->TransactionType,
-                'is_approved'           => (int) $transaction->Approval->IsApproved,
-            ]);
-            return 1;
-        }
-        if (strpos($file, 'statistics') !== false) {
-            $statistics = json_decode(file_get_contents($file));
-            Statistics::create([
-                'chunk_date'                => new Carbon($id),
-                'actor_id'                  => $statistics->ActorId,
-                'line_id'                   => $statistics->LineId,
-                'tour_id'                   => $statistics->TourId,
-                'operator_reference'        => strtoupper($statistics->OperatorReference),
-                'departure'                 => $statistics->Departure,
-                'registered'                => $statistics->Registered,
-                'stop_place_id_entry'       => $statistics->StopPlaceIdEntry ?? $statistics->Voyage->StopPlaceIdEntry,
-                'stop_place_id_exit'        => $statistics->StopPlaceIdExit ?? $statistics->Voyage->StopPlaceIdExit,
-                'statistic_name'            => $statistics->StatisticName ?? null,
-                'statistic_count'           => $statistics->StatisticCount ?? null,
-                'automatic_passenger_count' => $statistics->AutomaticPassengerCount ?? null,
-                'manual_passenger_count'    => $statistics->ManualPassengerCount ?? null,
-                'remaining_vehicle_count'   => $statistics->RemainingVehicleCount ?? null,
-            ]);
+        $method = "import" . $this->getSubjectFromFilePath($file);
+        if (method_exists($this, $method)) {
+            $json = json_decode(file_get_contents($file));
+            call_user_func([$this, $method], $id, $json);
             return 1;
         }
         return 0;
+    }
+
+    protected function importSoftpayTransaction(string $id, object $json): void
+    {
+        SoftpayTransaction::create([
+            'chunk_date'            => new Carbon($id),
+            'operator_reference'    => strtoupper($json->OperatorReference),
+            'departure'             => $json->Departure,
+            'line_id'               => $json->LineId,
+            'tour_id'               => $json->TourId,
+            'stop_place_id_entry'   => $json->StopPlaceIdEntry,
+            'stop_place_id_exit'    => $json->StopPlaceIdExit,
+            'actor_id'              => $json->ActorId,
+            'country_code'          => $json->CountryCode,
+            'transaction_number'    => $json->TransactionNumber,
+            'trailer'               => $json->Trailer,
+            'tariff_class'          => $json->TariffClass,
+            'receipt_id'            => $json->Identification->ReceiptId,
+            'batch_number'          => $json->Identification->BatchNumber,
+            'terminal_id'           => $json->Identification->TerminalId,
+            'merchant_org_number'   => $json->Merchant->OrganizationNumber,
+            'merchant_name'         => $json->Merchant->Name,
+            'card_scheme'           => $json->Card->Scheme,
+            'processed'             => $this->addTimeOffset($json->Payment->ProcessedAtUtc, $json->Payment->LocalTime),
+            'amount_paid'           => $json->Payment->AmountPaid,
+            'net_amount'            => $json->Payment->Details->NetAmount,
+            'vat'                   => $json->Payment->Details->Vat,
+            'vat_rate'              => $json->Payment->Details->VatRate,
+            'transaction_reference' => strtoupper($json->TransactionReferences[0]->OperatorReference),
+        ]);
+    }
+
+    protected function importOrcaTransaction(string $id, object $json): void
+    {
+        Transaction::create([
+            'chunk_date'            => new Carbon($id),
+            'line_id'               => $json->SalesPlace->LineId,
+            'actor_id'              => $json->SalesPlace->ActorId,
+            'operator_reference'    => strtoupper($json->Trip->OperatorReference),
+            'tour_id'               => $json->Trip->TourId,
+            'departure'             => $json->Trip->Departure,
+            'registered'            => $json->Trip->Registered,
+            'stop_place_id_entry'   => $json->Trip->StopPlaceIdEntry,
+            'stop_place_id_exit'    => $json->Trip->StopPlaceIdExit,
+            'trailer'               => (int) $json->Trip->Trailer,
+            'tariff_class'          => $json->Trip->TariffClass,
+            'nation_lpn_front'      => $json->Trip->NationLpnFront,
+            'ocr_confidence_front'  => $json->Trip->OcrConfidenceFront,
+            'transaction_type'      => $json->TransactionType,
+            'is_approved'           => (int) $json->Approval->IsApproved,
+        ]);
+    }
+
+    protected function importStatistics(string $id, object $json): void
+    {
+        Statistics::create([
+            'chunk_date'                => new Carbon($id),
+            'actor_id'                  => $json->ActorId,
+            'line_id'                   => $json->LineId,
+            'tour_id'                   => $json->TourId,
+            'operator_reference'        => strtoupper($json->OperatorReference),
+            'departure'                 => $json->Departure,
+            'registered'                => $json->Registered,
+            'stop_place_id_entry'       => $json->StopPlaceIdEntry ?? $json->Voyage->StopPlaceIdEntry,
+            'stop_place_id_exit'        => $json->StopPlaceIdExit ?? $json->Voyage->StopPlaceIdExit,
+            'statistic_name'            => $json->StatisticName ?? null,
+            'statistic_count'           => $json->StatisticCount ?? null,
+            'automatic_passenger_count' => $json->AutomaticPassengerCount ?? null,
+            'manual_passenger_count'    => $json->ManualPassengerCount ?? null,
+            'remaining_vehicle_count'   => $json->RemainingVehicleCount ?? null,
+        ]);
+    }
+
+    /**
+     * Get name of data type based on filename or path.
+     *
+     * @param string $filePath Filename or path
+     *
+     * @return string
+     */
+    protected function getSubjectFromFilePath(string $filePath): string
+    {
+        if (strpos($filePath, 'orca') !== false) return 'OrcaTransaction';
+        if (strpos($filePath, 'softpay') !== false) return 'SoftpayTransaction';
+        if (strpos($filePath, 'statistics') !== false) return 'Statistics';
     }
 
     /**
