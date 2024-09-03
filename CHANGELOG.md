@@ -5,6 +5,7 @@
 ### Added
 - Documentation of sink (`SINK.md`).
 - Support for downloading/import of ZIP'ed data from Mobitech.
+- Softpay transactions imported into DB.
 
 ### Fixed
 - Import failed for transactions with `tour_id` exceeding the INTEGER
