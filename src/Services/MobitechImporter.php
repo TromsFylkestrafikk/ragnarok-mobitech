@@ -27,8 +27,9 @@ class MobitechImporter
      */
     public function import(string $id, string $file)
     {
-        $method = "import" . $this->getSubjectFromFilePath($file);
-        if (method_exists($this, $method)) {
+        $subject = $this->getSubjectFromFilePath($file);
+        $method = "import" . $subject;
+        if ($subject && method_exists($this, $method)) {
             $json = json_decode(file_get_contents($file));
             call_user_func([$this, $method], $id, $json);
             return 1;
@@ -41,7 +42,7 @@ class MobitechImporter
         SoftpayTransaction::create([
             'chunk_date'            => new Carbon($id),
             'operator_reference'    => strtoupper($json->OperatorReference),
-            'departure'             => $json->Departure,
+            'departure'             => new Carbon ($json->Departure),
             'line_id'               => $json->LineId,
             'tour_id'               => $json->TourId,
             'stop_place_id_entry'   => $json->StopPlaceIdEntry,
@@ -57,7 +58,7 @@ class MobitechImporter
             'merchant_org_number'   => $json->Merchant->OrganizationNumber,
             'merchant_name'         => $json->Merchant->Name,
             'card_scheme'           => $json->Card->Scheme,
-            'processed'             => $this->addTimeOffset($json->Payment->ProcessedAtUtc, $json->Payment->LocalTime),
+            'processed'             => new Carbon($json->Payment->ProcessedAtUtc),
             'amount_paid'           => $json->Payment->AmountPaid,
             'net_amount'            => $json->Payment->Details->NetAmount,
             'vat'                   => $json->Payment->Details->Vat,
@@ -74,7 +75,7 @@ class MobitechImporter
             'actor_id'              => $json->SalesPlace->ActorId,
             'operator_reference'    => strtoupper($json->Trip->OperatorReference),
             'tour_id'               => $json->Trip->TourId,
-            'departure'             => $json->Trip->Departure,
+            'departure'             => new Carbon($json->Trip->Departure),
             'registered'            => $json->Trip->Registered,
             'stop_place_id_entry'   => $json->Trip->StopPlaceIdEntry,
             'stop_place_id_exit'    => $json->Trip->StopPlaceIdExit,
@@ -95,7 +96,7 @@ class MobitechImporter
             'line_id'                   => $json->LineId,
             'tour_id'                   => $json->TourId,
             'operator_reference'        => strtoupper($json->OperatorReference),
-            'departure'                 => $json->Departure,
+            'departure'                 => new Carbon($json->Departure),
             'registered'                => $json->Registered,
             'stop_place_id_entry'       => $json->StopPlaceIdEntry ?? $json->Voyage->StopPlaceIdEntry,
             'stop_place_id_exit'        => $json->StopPlaceIdExit ?? $json->Voyage->StopPlaceIdExit,
@@ -116,9 +117,12 @@ class MobitechImporter
      */
     protected function getSubjectFromFilePath(string $filePath): string
     {
-        if (strpos($filePath, 'orca') !== false) return 'OrcaTransaction';
-        if (strpos($filePath, 'softpay') !== false) return 'SoftpayTransaction';
-        if (strpos($filePath, 'statistics') !== false) return 'Statistics';
+        return match (true) {
+            strpos($filePath, 'orca') !== false => 'OrcaTransaction',
+            strpos($filePath, 'softpay') !== false => 'SoftpayTransaction',
+            strpos($filePath, 'statistics') !== false => 'Statistics',
+            default => '',
+        };
     }
 
     /**
